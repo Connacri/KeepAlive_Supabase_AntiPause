@@ -243,8 +243,9 @@ export function parseImportedConfig(rawJson: string): {
           ? rec.anon_key
           : '';
 
+    const hasSecretField = typeof rec.secret_key === 'string' && rec.secret_key.trim().length > 0;
     const keyType: KeyVariant =
-      rec.key_type === 'secret' || Boolean(secretKeyVal) || (anonKeyVal.startsWith('sb_secret_'))
+      rec.key_type === 'secret' || hasSecretField || anonKeyVal.startsWith('sb_secret_')
         ? 'secret'
         : 'anon';
 

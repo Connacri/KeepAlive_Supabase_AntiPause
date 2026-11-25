@@ -14,6 +14,10 @@ export interface ProjectConfig {
   table: string;
   keep: number;
   enabled: boolean;
+  /** Horodatage ISO de dernière activation (suivi du temps cumulé d'activité). */
+  activeSince?: string;
+  /** Durée d'activité déjà cumulée en millisecondes avant la dernière mise en pause. */
+  accumulatedActiveMs?: number;
   /** Stocké uniquement en mémoire navigateur pour aider à générer les commandes `gh secret set`, jamais exporté dans le dépôt Git. */
   localKeyValue?: string;
   /** Stocké uniquement en mémoire navigateur pour aider à générer les commandes `gh secret set`, jamais exporté dans le dépôt Git. */
@@ -22,6 +26,8 @@ export interface ProjectConfig {
 
 export interface RepoSettings {
   repoName: string;
+  githubRepoSlug: string;
+  githubBranch: string;
   cronPreset: CronPreset;
   customCron: string;
   urlsInSecrets: boolean;

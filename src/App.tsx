@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 import { ProjectConfig, RepoSettings } from './types';
 import { buildSecretChecklist, generateRepositoryFiles, resolveCronExpression } from './utils/repoGenerator';
+import { stampInitialActivity, transitionProjectActivity } from './utils/projectActivity';
 import { downloadRepoAsZip } from './utils/zipExport';
 import { NavSection, Sidebar } from './components/Sidebar';
 import { ProjectsView } from './components/ProjectsView';
@@ -44,7 +45,9 @@ const DEFAULT_PROJECTS: ProjectConfig[] = [
 ];
 
 const DEFAULT_SETTINGS: RepoSettings = {
-  repoName: 'supabase-keepalive-actions',
+  repoName: 'KeepAlive_Supabase_AntiPause',
+  githubRepoSlug: 'Connacri/KeepAlive_Supabase_AntiPause',
+  githubBranch: 'main',
   cronPreset: 'every12h',
   customCron: '0 */12 * * *',
   urlsInSecrets: false,
@@ -56,13 +59,13 @@ const SECTION_TITLES: Record<NavSection, { title: string; subtitle: string }> = 
     title: 'Projets Supabase',
     subtitle: 'Configure les projets à maintenir actifs via GitHub Actions.',
   },
-  repo: {
-    title: 'Dépôt GitHub',
-    subtitle: 'Inspecte et télécharge le dépôt prêt à pousser (ping, création et vidage).',
-  },
   secrets: {
-    title: 'Secrets & Déploiement',
-    subtitle: 'Ajoute les Secrets dans GitHub puis pousse le dépôt.',
+    title: 'Sync GitHub & Secrets',
+    subtitle: 'Pousse les workflows et configure les Secrets directement sur ton dépôt déjà existant.',
+  },
+  repo: {
+    title: 'Fichiers du dépôt',
+    subtitle: 'Inspecte les workflows, le script Python et projects.json générés pour GitHub Actions.',
   },
   sql: {
     title: 'SQL & Opérations',
@@ -71,28 +74,43 @@ const SECTION_TITLES: Record<NavSection, { title: string; subtitle: string }> = 
 };
 
 function loadInitialProjects(): ProjectConfig[] {
+  const nowIso = new Date().toISOString();
   try {
     const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return stampInitialActivity(parsed, nowIso);
     }
   } catch {
     // ignore storage errors
   }
-  return DEFAULT_PROJECTS;
+  return stampInitialActivity(DEFAULT_PROJECTS, nowIso);
+}
+
+function detectRepoSlugFromLocation(): string | null {
+  if (typeof window === 'undefined') return null;
+  const host = window.location.hostname.toLowerCase();
+  if (!host.endsWith('.github.io')) return null;
+  const owner = host.split('.')[0];
+  const repo = window.location.pathname.split('/').filter(Boolean)[0];
+  if (!owner || !repo) return null;
+  return `${owner}/${repo}`;
 }
 
 function loadInitialSettings(): RepoSettings {
+  const detectedSlug = detectRepoSlugFromLocation();
+  const baseDefaults = detectedSlug
+    ? { ...DEFAULT_SETTINGS, githubRepoSlug: detectedSlug }
+    : DEFAULT_SETTINGS;
   try {
     const raw = localStorage.getItem(STORAGE_SETTINGS_KEY);
     if (raw) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      return { ...baseDefaults, ...JSON.parse(raw) };
     }
   } catch {
     // ignore storage errors
   }
-  return DEFAULT_SETTINGS;
+  return baseDefaults;
 }
 
 export default function App() {
@@ -103,6 +121,10 @@ export default function App() {
   const [editingProject, setEditingProject] = useState<ProjectConfig | null>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Strictement en mémoire navigateur (jamais persisté dans localStorage)
+  const [githubToken, setGithubToken] = useState('');
+  const [inlineSecretValues, setInlineSecretValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
@@ -144,19 +166,33 @@ export default function App() {
   const activeCount = useMemo(() => projects.filter((p) => p.enabled).length, [projects]);
 
   const handleSaveProject = (draft: Omit<ProjectConfig, 'id'>, existingId?: string) => {
+    const nowMs = Date.now();
     if (existingId) {
-      setProjects((prev) => prev.map((p) => (p.id === existingId ? { ...draft, id: existingId } : p)));
+      setProjects((prev) =>
+        prev.map((p) => {
+          if (p.id !== existingId) return p;
+          const activityPatch = transitionProjectActivity(p, draft.enabled, nowMs);
+          return { ...draft, id: existingId, ...activityPatch };
+        })
+      );
       showToast(`Projet « ${draft.name} » mis à jour.`);
     } else {
-      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-      setProjects((prev) => [...prev, { ...draft, id }]);
-      showToast(`Projet « ${draft.name} » ajouté au dépôt.`);
+      const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(nowMs);
+      const activityPatch = draft.enabled
+        ? { activeSince: new Date(nowMs).toISOString(), accumulatedActiveMs: 0 }
+        : { activeSince: undefined, accumulatedActiveMs: 0 };
+      setProjects((prev) => [...prev, { ...draft, id, ...activityPatch }]);
+      showToast(`Projet « ${draft.name} » ajouté.`);
     }
   };
 
   const handleToggleProject = (id: string) => {
+    const nowMs = Date.now();
     setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p))
+      prev.map((p) => {
+        if (p.id !== id) return p;
+        return { ...p, ...transitionProjectActivity(p, !p.enabled, nowMs) };
+      })
     );
   };
 
@@ -169,17 +205,35 @@ export default function App() {
   };
 
   const handleImportProjects = (imported: Omit<ProjectConfig, 'id'>[]) => {
-    const stamped = imported.map((p, idx) => ({
-      ...p,
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${idx}`,
-    }));
+    const nowIso = new Date().toISOString();
+    const stamped = stampInitialActivity(
+      imported.map((p, idx) => ({
+        ...p,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${idx}`,
+      })),
+      nowIso
+    );
     setProjects((prev) => [...prev, ...stamped]);
     showToast(`${stamped.length} projet(s) importé(s).`);
   };
 
+  const handleReplaceProjectsFromRepo = (loaded: Omit<ProjectConfig, 'id'>[]) => {
+    const nowIso = new Date().toISOString();
+    const stamped = stampInitialActivity(
+      loaded.map((p, idx) => ({
+        ...p,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${idx}`,
+      })),
+      nowIso
+    );
+    setProjects(stamped);
+    showToast(`${stamped.length} projet(s) chargé(s) depuis GitHub.`);
+  };
+
   const handleDownloadZip = async () => {
-    await downloadRepoAsZip(settings.repoName, files);
-    showToast(`Archive « ${settings.repoName}.zip » générée (${files.length} fichiers).`);
+    const slug = settings.githubRepoSlug.split('/').pop() || settings.repoName;
+    await downloadRepoAsZip(slug, files);
+    showToast(`Archive « ${slug}.zip » générée (${files.length} fichiers).`);
   };
 
   const sectionMeta = SECTION_TITLES[activeSection];
@@ -203,12 +257,12 @@ export default function App() {
 
           <button
             type="button"
-            onClick={handleDownloadZip}
+            onClick={() => setActiveSection('secrets')}
             className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap shrink-0"
           >
-            <Download className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Télécharger le dépôt (.zip)</span>
-            <span className="sm:hidden">Dépôt (.zip)</span>
+            <UploadCloud className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Synchroniser sur GitHub</span>
+            <span className="sm:hidden">Sync GitHub</span>
           </button>
         </header>
 
@@ -231,7 +285,25 @@ export default function App() {
               onDelete={handleDeleteProject}
               onOpenImport={() => setImportModalOpen(true)}
               onNavigateRepo={() => setActiveSection('repo')}
+              onNavigateSync={() => setActiveSection('secrets')}
               onUpdateSettings={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
+            />
+          )}
+
+          {activeSection === 'secrets' && (
+            <SecretsDeployView
+              secrets={secrets}
+              settings={settings}
+              files={files}
+              githubToken={githubToken}
+              onChangeGithubToken={setGithubToken}
+              inlineSecretValues={inlineSecretValues}
+              onChangeInlineSecretValue={(name, value) =>
+                setInlineSecretValues((prev) => ({ ...prev, [name]: value }))
+              }
+              onUpdateSettings={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
+              onLoadProjectsFromRepo={handleReplaceProjectsFromRepo}
+              onShowToast={showToast}
             />
           )}
 
@@ -240,11 +312,8 @@ export default function App() {
               files={files}
               settings={settings}
               onUpdateSettings={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
+              onDownloadZip={handleDownloadZip}
             />
-          )}
-
-          {activeSection === 'secrets' && (
-            <SecretsDeployView secrets={secrets} settings={settings} />
           )}
 
           {activeSection === 'sql' && <SqlReferenceView projects={projects} />}

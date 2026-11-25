@@ -12,8 +12,8 @@ interface SidebarProps {
 
 const NAV_ITEMS: { id: NavSection; label: string; icon: typeof Database }[] = [
   { id: 'projects', label: 'Projets Supabase', icon: Database },
-  { id: 'repo', label: 'Dépôt GitHub', icon: FolderGit2 },
-  { id: 'secrets', label: 'Secrets & Déploiement', icon: KeyRound },
+  { id: 'secrets', label: 'Sync GitHub & Secrets', icon: KeyRound },
+  { id: 'repo', label: 'Fichiers du dépôt', icon: FolderGit2 },
   { id: 'sql', label: 'SQL & Opérations', icon: FileCode2 },
 ];
 

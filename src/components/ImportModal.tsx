@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { FileUp, X } from 'lucide-react';
 import { ProjectConfig } from '../types';
 import { parseImportedConfig } from '../utils/supabaseParser';
 
@@ -12,13 +12,28 @@ interface ImportModalProps {
 export function ImportModal({ open, onClose, onImport }: ImportModalProps) {
   const [jsonText, setJsonText] = useState('');
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!open) return null;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError('');
+    try {
+      const content = await file.text();
+      setJsonText(content);
+    } catch {
+      setError('Impossible de lire le fichier sélectionné.');
+    } finally {
+      e.target.value = '';
+    }
+  };
 
   const handleImport = () => {
     setError('');
     if (!jsonText.trim()) {
-      setError('Colle le contenu de ton fichier config.json avant d’importer.');
+      setError('Colle le contenu de ton fichier config.json ou sélectionne un fichier avant d’importer.');
       return;
     }
 
@@ -59,11 +74,32 @@ export function ImportModal({ open, onClose, onImport }: ImportModalProps) {
         </div>
 
         <div className="p-6 space-y-4">
-          <p className="text-sm text-slate-600">
-            Compatible avec <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">config.json</code> de
-            SupabaseKeepAlive Windows et le format <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">travisvn/supabase-inactive-fix</code>.
-            Les secrets chiffrés DPAPI ne sont pas déchiffrables ici et seront remplacés par des noms de Secrets GitHub.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">
+              Compatible avec <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">config.json</code> de
+              SupabaseKeepAlive Windows, <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">projects.json</code> et{' '}
+              <code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">travisvn</code>.
+              Les secrets <code className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">dpapi:</code> sont ignorés par sécurité.
+            </p>
+            <div className="shrink-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                onChange={handleFileChange}
+                className="sr-only"
+                aria-label="Sélectionner un fichier JSON"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 whitespace-nowrap"
+              >
+                <FileUp className="w-3.5 h-3.5 text-slate-500" />
+                <span>Choisir un fichier .json</span>
+              </button>
+            </div>
+          </div>
 
           <div>
             <label htmlFor="import-json-input" className="block text-sm font-medium text-slate-700 mb-1.5">

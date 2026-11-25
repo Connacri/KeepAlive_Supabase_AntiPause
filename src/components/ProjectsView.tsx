@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { ProjectConfig, RepoSettings } from '../types';
 import { PingScheduleDashboard } from './PingScheduleDashboard';
+import { ProjectsSummaryDashboard } from './ProjectsSummaryDashboard';
 
 interface ProjectsViewProps {
   projects: ProjectConfig[];
@@ -22,6 +23,7 @@ interface ProjectsViewProps {
   onDelete: (id: string) => void;
   onOpenImport: () => void;
   onNavigateRepo: () => void;
+  onNavigateSync: () => void;
   onUpdateSettings: (patch: Partial<RepoSettings>) => void;
 }
 
@@ -38,17 +40,11 @@ export function ProjectsView({
   onDelete,
   onOpenImport,
   onNavigateRepo,
+  onNavigateSync,
   onUpdateSettings,
 }: ProjectsViewProps) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
-
-  const distinctAccounts = useMemo(() => {
-    const set = new Set(projects.map((p) => p.account.trim()).filter(Boolean));
-    return set.size;
-  }, [projects]);
-
-  const activeCount = useMemo(() => projects.filter((p) => p.enabled).length, [projects]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -75,32 +71,11 @@ export function ProjectsView({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="text-xs font-medium text-slate-500">Projets configurés</div>
-          <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums">
-            {activeCount} <span className="text-sm font-normal text-slate-500">/ {projects.length} actifs</span>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="text-xs font-medium text-slate-500">Comptes Supabase</div>
-          <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums">
-            {distinctAccounts}
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="text-xs font-medium text-slate-500">Secrets GitHub requis</div>
-          <div className="mt-1 text-2xl font-semibold text-slate-900 tabular-nums">
-            {secretCount}
-          </div>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
-          <div className="text-xs font-medium text-slate-500">Planification GitHub Actions</div>
-          <div className="mt-1 text-sm font-semibold text-slate-900 truncate" title={cronLabel}>
-            {cronLabel}
-          </div>
-        </div>
-      </div>
+      <ProjectsSummaryDashboard
+        projects={projects}
+        secretCount={secretCount}
+        cronLabel={cronLabel}
+      />
 
       <PingScheduleDashboard
         projects={projects}
@@ -287,19 +262,28 @@ export function ProjectsView({
       <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h3 className="text-sm font-semibold text-slate-900">
-            Trois workflows inclus dans le dépôt prêt à pousser
+            Automatisation prête pour ton dépôt GitHub déjà poussé
           </h3>
           <p className="text-sm text-slate-600">
-            Ping planifié (<span className="font-mono text-xs">keepalive.yml</span>), création automatique de table (<span className="font-mono text-xs">setup-tables.yml</span>) et vidage sécurisé (<span className="font-mono text-xs">empty-tables.yml</span>).
+            Cible actuelle : <span className="font-mono text-xs text-slate-800">{settings.githubRepoSlug || settings.repoName}</span> ({settings.githubBranch || 'main'}). Pousse directement <span className="font-mono text-xs">keepalive.yml</span>, <span className="font-mono text-xs">setup-tables.yml</span> et <span className="font-mono text-xs">empty-tables.yml</span> sans télécharger d’archive.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onNavigateRepo}
-          className="px-4 py-2 text-sm font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 whitespace-nowrap shrink-0"
-        >
-          Inspecter les fichiers du dépôt
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onNavigateRepo}
+            className="px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 whitespace-nowrap"
+          >
+            Voir les fichiers
+          </button>
+          <button
+            type="button"
+            onClick={onNavigateSync}
+            className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 whitespace-nowrap"
+          >
+            Synchroniser sur GitHub
+          </button>
+        </div>
       </div>
     </div>
   );

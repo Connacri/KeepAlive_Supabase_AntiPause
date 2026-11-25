@@ -1,0 +1,31 @@
+name: Supabase KeepAlive (Ping)
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Nom exact du projet à pinger (laisser vide pour tous les projets actifs)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    name: Pinger les projets Supabase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Exécuter les pings Supabase (INSERT / UPDATE / COUNT / DELETE)
+        run: |
+          python3 scripts/keepalive.py ping --config projects.json --project "${{ inputs.project }}"

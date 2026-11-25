@@ -1,0 +1,29 @@
+name: Supabase — Créer les tables
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Nom exact du projet (laisser vide pour créer la table sur tous les projets)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  setup-tables:
+    name: Créer / vérifier les tables keepalive_pings
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Créer ou vérifier les tables via API Supabase
+        run: |
+          python3 scripts/keepalive.py setup --config projects.json --project "${{ inputs.project }}"

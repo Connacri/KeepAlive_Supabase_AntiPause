@@ -36,6 +36,8 @@ const sampleProjects: ProjectConfig[] = [
 
 const settings: RepoSettings = {
   repoName: 'supabase-keepalive-actions',
+  githubRepoSlug: 'Connacri/KeepAlive_Supabase_AntiPause',
+  githubBranch: 'main',
   cronPreset: 'every12h',
   customCron: '0 */12 * * *',
   urlsInSecrets: false,

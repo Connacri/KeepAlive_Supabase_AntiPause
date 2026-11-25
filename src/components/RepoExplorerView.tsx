@@ -8,12 +8,14 @@ interface RepoExplorerViewProps {
   files: GeneratedFile[];
   settings: RepoSettings;
   onUpdateSettings: (patch: Partial<RepoSettings>) => void;
+  onDownloadZip: () => void;
 }
 
 export function RepoExplorerView({
   files,
   settings,
   onUpdateSettings,
+  onDownloadZip,
 }: RepoExplorerViewProps) {
   const [selectedPath, setSelectedPath] = useState<string>('.github/workflows/keepalive.yml');
   const [copiedPath, setCopiedPath] = useState<string | null>(null);
@@ -39,23 +41,48 @@ export function RepoExplorerView({
   return (
     <div className="space-y-6">
       <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-slate-900">Paramètres du dépôt GitHub Actions</h2>
-          <p className="text-sm text-slate-500">
-            Toutes les modifications régénèrent immédiatement les workflows et les scripts ci-dessous.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Paramètres des workflows GitHub Actions</h2>
+            <p className="text-sm text-slate-500">
+              Toutes les modifications régénèrent immédiatement les fichiers à synchroniser sur ton dépôt.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onDownloadZip}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 whitespace-nowrap shrink-0 self-start sm:self-auto"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Exporter .zip (secours)</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2 border-t border-slate-200">
           <div>
-            <label htmlFor="repo-name-input" className="block text-xs font-medium text-slate-600 mb-1">
-              Nom du dépôt GitHub
+            <label htmlFor="repo-slug-input" className="block text-xs font-medium text-slate-600 mb-1">
+              Dépôt GitHub (propriétaire/dépôt)
             </label>
             <input
-              id="repo-name-input"
+              id="repo-slug-input"
               type="text"
-              value={settings.repoName}
-              onChange={(e) => onUpdateSettings({ repoName: e.target.value })}
+              value={settings.githubRepoSlug}
+              onChange={(e) => onUpdateSettings({ githubRepoSlug: e.target.value })}
+              placeholder="Connacri/KeepAlive_Supabase_AntiPause"
+              className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="repo-branch-input" className="block text-xs font-medium text-slate-600 mb-1">
+              Branche cible
+            </label>
+            <input
+              id="repo-branch-input"
+              type="text"
+              value={settings.githubBranch}
+              onChange={(e) => onUpdateSettings({ githubBranch: e.target.value })}
+              placeholder="main"
               className="w-full px-3 py-2 text-sm font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
             />
           </div>

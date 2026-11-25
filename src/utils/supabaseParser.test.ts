@@ -92,3 +92,26 @@ test('parseImportedConfig supports travisvn array and // comments without leakin
   assert.equal(res.projects[0].keySecretName, 'SUPABASE_KEY_PORTFOLIO');
   assert.equal(res.projects[0].tokenSecretName, 'SUPABASE_TOKEN_PERSO_GMAIL_COM');
 });
+
+test('parseImportedConfig preserves secret keyType when Windows config.json has dpapi secret_key', () => {
+  const raw = JSON.stringify({
+    interval_hours: 72,
+    projects: [
+      {
+        name: 'Appointment',
+        url: 'https://vkmgakmujipnpjlawjqm.supabase.co',
+        table: 'keepalive_pings',
+        keep: 5,
+        enabled: true,
+        anon_key: 'dpapi:AQAAANCM',
+        secret_key: 'dpapi:AQAAANCMSECRET',
+        account: 'user@example.com',
+      },
+    ],
+  });
+  const res = parseImportedConfig(raw);
+  assert.equal(res.errors.length, 0);
+  assert.equal(res.projects.length, 1);
+  assert.equal(res.projects[0].keyType, 'secret');
+  assert.equal(res.projects[0].localKeyValue, undefined);
+});

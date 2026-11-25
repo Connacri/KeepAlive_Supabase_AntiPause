@@ -1,0 +1,39 @@
+name: Supabase — Vider les tables
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Nom exact du projet à vider (laisser vide pour TOUS les projets)'
+        required: false
+        default: ''
+      confirm:
+        description: 'Taper VIDER en majuscules pour confirmer la suppression des lignes'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  empty-tables:
+    name: Vider les tables de keep-alive
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la confirmation
+        if: ${{ inputs.confirm != 'VIDER' }}
+        run: |
+          echo "Confirmation refusée : saisis exactement VIDER dans le champ confirm."
+          exit 1
+
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Vider la ou les tables keep-alive
+        run: |
+          python3 scripts/keepalive.py empty --config projects.json --project "${{ inputs.project }}" --confirm
