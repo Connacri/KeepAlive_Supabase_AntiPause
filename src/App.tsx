@@ -292,6 +292,7 @@ export default function App() {
 
           {activeSection === 'secrets' && (
             <SecretsDeployView
+              projects={projects}
               secrets={secrets}
               settings={settings}
               files={files}
@@ -300,6 +301,9 @@ export default function App() {
               inlineSecretValues={inlineSecretValues}
               onChangeInlineSecretValue={(name, value) =>
                 setInlineSecretValues((prev) => ({ ...prev, [name]: value }))
+              }
+              onChangeBulkSecretValues={(patch) =>
+                setInlineSecretValues((prev) => ({ ...prev, ...patch }))
               }
               onUpdateSettings={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
               onLoadProjectsFromRepo={handleReplaceProjectsFromRepo}

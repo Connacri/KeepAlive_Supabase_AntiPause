@@ -177,10 +177,14 @@ async function githubRequest<T>(
       throw new Error('Jeton GitHub invalide ou expiré (HTTP 401).');
     }
     if (res.status === 403) {
-      throw new Error(`Droits GitHub insuffisants pour cette action (${apiMsg}).`);
+      throw new Error(
+        `Droits GitHub insuffisants (${apiMsg}). Classic PAT : coche « repo » et « workflow ». Fine-grained PAT : active Contents, Secrets et Actions (Read/Write).`
+      );
     }
     if (res.status === 404) {
-      throw new Error(`Dépôt, branche ou ressource introuvable sur GitHub (${apiMsg}).`);
+      throw new Error(
+        `Ressource GitHub introuvable ou inaccessible avec ce jeton (${apiMsg}). Vérifie le dépôt/branche et les droits du PAT (scope « repo » ou Secrets Read/Write).`
+      );
     }
     throw new Error(`Erreur API GitHub : ${apiMsg}`);
   }

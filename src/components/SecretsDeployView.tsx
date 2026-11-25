@@ -28,8 +28,10 @@ import {
   syncSecretsToGitHub,
   triggerGitHubWorkflow,
 } from '../utils/githubSync';
+import { buildWindowsDpapiExportCommand, parseEnvSecretBlock } from '../utils/secretBulkParser';
 
 interface SecretsDeployViewProps {
+  projects: ProjectConfig[];
   secrets: SecretItem[];
   settings: RepoSettings;
   files: GeneratedFile[];
@@ -37,12 +39,14 @@ interface SecretsDeployViewProps {
   onChangeGithubToken: (token: string) => void;
   inlineSecretValues: Record<string, string>;
   onChangeInlineSecretValue: (name: string, value: string) => void;
+  onChangeBulkSecretValues: (patch: Record<string, string>) => void;
   onUpdateSettings: (patch: Partial<RepoSettings>) => void;
   onLoadProjectsFromRepo: (projects: Omit<ProjectConfig, 'id'>[]) => void;
   onShowToast: (msg: string) => void;
 }
 
 export function SecretsDeployView({
+  projects,
   secrets,
   settings,
   files,
@@ -50,6 +54,7 @@ export function SecretsDeployView({
   onChangeGithubToken,
   inlineSecretValues,
   onChangeInlineSecretValue,
+  onChangeBulkSecretValues,
   onUpdateSettings,
   onLoadProjectsFromRepo,
   onShowToast,
@@ -68,10 +73,15 @@ export function SecretsDeployView({
   const [lastPush, setLastPush] = useState<PushFilesResult | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncSuccess, setSyncSuccess] = useState<string | null>(null);
+  const [secretsError, setSecretsError] = useState<string | null>(null);
+  const [secretsSuccess, setSecretsSuccess] = useState<string | null>(null);
+  const [bulkHelperOpen, setBulkHelperOpen] = useState(false);
+  const [bulkEnvText, setBulkEnvText] = useState('');
 
   const parsedSlug = useMemo(() => parseRepoSlug(settings.githubRepoSlug), [settings.githubRepoSlug]);
   const pagesUrl = useMemo(() => getGitHubPagesUrl(settings.githubRepoSlug), [settings.githubRepoSlug]);
   const filesToPush = useMemo(() => selectFilesForExistingRepo(files), [files]);
+  const windowsDpapiCommand = useMemo(() => buildWindowsDpapiExportCommand(projects), [projects]);
 
   const effectiveSecretValues = useMemo(() => {
     const map: Record<string, string> = {};
@@ -209,8 +219,8 @@ gh workflow run keepalive.yml --repo ${slug}`;
   };
 
   const handleSyncSecrets = async () => {
-    setSyncError(null);
-    setSyncSuccess(null);
+    setSecretsError(null);
+    setSecretsSuccess(null);
     setSyncingSecrets(true);
     try {
       const payload = secrets.map((s) => ({
@@ -226,19 +236,45 @@ gh workflow run keepalive.yml --repo ${slug}`;
         res.skipped.length > 0
           ? `${res.uploaded.length} secret(s) envoyé(s) sur GitHub (${res.skipped.length} laissé(s) vide(s)).`
           : `${res.uploaded.length} secret(s) chiffré(s) et envoyé(s) sur GitHub.`;
-      setSyncSuccess(msg);
+      setSecretsSuccess(msg);
       onShowToast(msg);
-      const status = await fetchGitHubRepoStatus({
-        repoSlug: settings.githubRepoSlug,
-        branch: settings.githubBranch,
-        token: githubToken,
-      });
-      setRepoStatus(status);
+      try {
+        const status = await fetchGitHubRepoStatus({
+          repoSlug: settings.githubRepoSlug,
+          branch: settings.githubBranch,
+          token: githubToken,
+        });
+        setRepoStatus(status);
+      } catch {
+        // non-blocking refresh
+      }
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : 'Impossible d’envoyer les secrets.');
+      setSecretsError(err instanceof Error ? err.message : 'Impossible d’envoyer les secrets.');
     } finally {
       setSyncingSecrets(false);
     }
+  };
+
+  const handleApplyBulkEnv = () => {
+    setSecretsError(null);
+    setSecretsSuccess(null);
+    const validNames = new Set(secrets.map((s) => s.name));
+    const parsed = parseEnvSecretBlock(bulkEnvText, validNames);
+    const count = Object.keys(parsed.matched).length;
+    if (count === 0) {
+      setSecretsError(
+        parsed.unknownKeys.length > 0
+          ? `Aucune variable ne correspond aux secrets attendus (ignorées : ${parsed.unknownKeys.slice(0, 4).join(', ')}).`
+          : 'Colle au moins une ligne au format NOM_DU_SECRET=valeur.'
+      );
+      return;
+    }
+    onChangeBulkSecretValues(parsed.matched);
+    setBulkEnvText('');
+    setBulkHelperOpen(false);
+    const msg = `${count} secret(s) pré-rempli(s) en mémoire. Clique maintenant sur « Envoyer ${count} secret(s) sur GitHub ».`;
+    setSecretsSuccess(msg);
+    onShowToast(`${count} secret(s) pré-rempli(s) en mémoire.`);
   };
 
   const handleTriggerWorkflow = async (
@@ -446,13 +482,14 @@ gh workflow run keepalive.yml --repo ${slug}`;
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-            <p className="text-xs text-slate-500 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <p className="text-xs text-slate-500 flex items-start gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>
-                Droits requis : <span className="font-mono">Contents (Read/Write)</span>,{' '}
-                <span className="font-mono">Secrets (Read/Write)</span> et{' '}
-                <span className="font-mono">Actions (Read/Write)</span>. Jamais sauvegardé dans{' '}
-                <span className="font-mono">localStorage</span>.
+                Classic PAT (<span className="font-mono">ghp_...</span>) : cocher{' '}
+                <span className="font-mono">repo</span> et <span className="font-mono">workflow</span>.{' '}
+                Fine-grained PAT : <span className="font-mono">Contents</span>,{' '}
+                <span className="font-mono">Secrets</span> et <span className="font-mono">Actions</span>{' '}
+                (Read/Write). Jamais sauvegardé dans <span className="font-mono">localStorage</span>.
               </span>
             </p>
 
@@ -636,7 +673,16 @@ gh workflow run keepalive.yml --repo ${slug}`;
               .
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setBulkHelperOpen((prev) => !prev)}
+              disabled={secrets.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+            >
+              <span>{bulkHelperOpen ? 'Fermer import en masse' : 'Importer .env / config Windows'}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleSyncSecrets}
@@ -652,6 +698,95 @@ gh workflow run keepalive.yml --repo ${slug}`;
             </button>
           </div>
         </div>
+
+        {(secretsError || secretsSuccess || (secrets.length > 0 && readySecretCount === 0)) && (
+          <div className="px-5 py-3 border-b border-slate-200 space-y-2.5 bg-slate-50/50">
+            {secretsError && (
+              <div
+                role="alert"
+                className="p-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2"
+              >
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{secretsError}</span>
+              </div>
+            )}
+
+            {secretsSuccess && (
+              <div
+                role="status"
+                className="p-3 text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{secretsSuccess}</span>
+              </div>
+            )}
+
+            {secrets.length > 0 && readySecretCount === 0 && !secretsError && (
+              <div className="p-3 text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-lg leading-relaxed">
+                <span className="font-semibold">Pourquoi « Repository secrets » reste vide sur GitHub :</span>{' '}
+                pousser les fichiers envoie uniquement <span className="font-mono">projects.json</span> et les workflows, mais aucune clé secrète. Si tu as importé un <span className="font-mono">config.json</span> Windows, ses clés <span className="font-mono">dpapi:...</span> sont chiffrées pour ton PC et ne peuvent pas être déchiffrées par un navigateur. Renseigne les valeurs ci-dessous ou clique sur <span className="font-semibold">Importer .env / config Windows</span>, puis clique sur <span className="font-semibold">Envoyer X secret(s) sur GitHub</span>.
+              </div>
+            )}
+          </div>
+        )}
+
+        {bulkHelperOpen && (
+          <div className="p-5 border-b border-slate-200 bg-slate-50 space-y-4">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-800">
+                  Option A — Extraire les clés déchiffrées depuis ton PC Windows (PowerShell)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => copyText('dpapi-export', windowsDpapiCommand)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-100 whitespace-nowrap"
+                >
+                  {copiedId === 'dpapi-export' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Copié</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Copier la commande PowerShell</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-slate-600">
+                Exécute cette commande dans PowerShell sur le PC où tourne SupabaseKeepAlive : elle déchiffre ton <span className="font-mono">config.json</span> localement et copie les lignes <span className="font-mono">SUPABASE_KEY_...=...</span> dans ton presse-papiers.
+              </p>
+              <pre className="p-3 bg-slate-900 text-slate-100 text-[11px] font-mono rounded-lg overflow-x-auto">
+                <code>{windowsDpapiCommand}</code>
+              </pre>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="bulk-env-textarea" className="block text-xs font-semibold text-slate-800">
+                Option B — Coller un bloc de variables (NOM_SECRET=valeur)
+              </label>
+              <textarea
+                id="bulk-env-textarea"
+                rows={5}
+                value={bulkEnvText}
+                onChange={(e) => setBulkEnvText(e.target.value)}
+                placeholder={'SUPABASE_KEY_APPOINTMENT=sb_secret_...\nSUPABASE_KEY_CYBERSCRAPE=sb_secret_...\nSUPABASE_TOKEN_CONNACRI3_GMAIL_COM=sbp_...'}
+                className="w-full px-3 py-2 text-xs font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+              />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleApplyBulkEnv}
+                  className="px-3.5 py-2 text-xs font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 whitespace-nowrap"
+                >
+                  Pré-remplir les champs en mémoire
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {secrets.length === 0 ? (
           <div className="p-6 text-sm text-slate-500">
