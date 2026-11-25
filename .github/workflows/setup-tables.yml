@@ -25,5 +25,15 @@ jobs:
           python-version: '3.12'
 
       - name: Créer ou vérifier les tables via API Supabase
+        env:
+          SUPABASE_TOKEN_PERSO: ${{ secrets.SUPABASE_TOKEN_PERSO }}
+          SUPABASE_TOKEN_CONNACRI3_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_CONNACRI3_GMAIL_COM }}
+          SUPABASE_TOKEN_RAMZI_GUEDOUAR_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_RAMZI_GUEDOUAR_GMAIL_COM }}
+          SUPABASE_TOKEN_ORAN_INTURK_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_ORAN_INTURK_GMAIL_COM }}
+          SUPABASE_TOKEN_SAMUEL69TR00_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_SAMUEL69TR00_GMAIL_COM }}
+          SUPABASE_TOKEN_FORSLOG_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_FORSLOG_GMAIL_COM }}
+          SUPABASE_TOKEN_AN_TIREX_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_AN_TIREX_GMAIL_COM }}
+          SUPABASE_TOKEN_ORAN_TIREX_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_ORAN_TIREX_GMAIL_COM }}
+          SUPABASE_TOKEN_CONNACRI1_GMAIL_COM: ${{ secrets.SUPABASE_TOKEN_CONNACRI1_GMAIL_COM }}
         run: |
           python3 scripts/keepalive.py setup --config projects.json --project "${{ inputs.project }}"

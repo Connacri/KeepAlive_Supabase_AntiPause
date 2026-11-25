@@ -35,5 +35,20 @@ jobs:
           python-version: '3.12'
 
       - name: Vider la ou les tables keep-alive
+        env:
+          SUPABASE_KEY_BLOG_VITRINE: ${{ secrets.SUPABASE_KEY_BLOG_VITRINE }}
+          SUPABASE_KEY_CRM_CLIENT: ${{ secrets.SUPABASE_KEY_CRM_CLIENT }}
+          SUPABASE_KEY_APPOINTMENT: ${{ secrets.SUPABASE_KEY_APPOINTMENT }}
+          SUPABASE_KEY_CYBERSCRAPE: ${{ secrets.SUPABASE_KEY_CYBERSCRAPE }}
+          SUPABASE_KEY_RAMZI_GUEDOUAR_GMAIL_COM_S_PROJECT: ${{ secrets.SUPABASE_KEY_RAMZI_GUEDOUAR_GMAIL_COM_S_PROJECT }}
+          SUPABASE_KEY_CONGRESS_S_PROJECT: ${{ secrets.SUPABASE_KEY_CONGRESS_S_PROJECT }}
+          SUPABASE_KEY_PLANNING: ${{ secrets.SUPABASE_KEY_PLANNING }}
+          SUPABASE_KEY_RND: ${{ secrets.SUPABASE_KEY_RND }}
+          SUPABASE_KEY_DORO_S_PROJECT: ${{ secrets.SUPABASE_KEY_DORO_S_PROJECT }}
+          SUPABASE_KEY_PROFILUM_PROJECT: ${{ secrets.SUPABASE_KEY_PROFILUM_PROJECT }}
+          SUPABASE_KEY_FORSLOG_GMAIL_COM: ${{ secrets.SUPABASE_KEY_FORSLOG_GMAIL_COM }}
+          SUPABASE_KEY_ORHOSPITAL_PLATEAU: ${{ secrets.SUPABASE_KEY_ORHOSPITAL_PLATEAU }}
+          SUPABASE_KEY_WIFI_PROJECT: ${{ secrets.SUPABASE_KEY_WIFI_PROJECT }}
+          SUPABASE_KEY_CARGOLINK: ${{ secrets.SUPABASE_KEY_CARGOLINK }}
         run: |
           python3 scripts/keepalive.py empty --config projects.json --project "${{ inputs.project }}" --confirm

@@ -1,3 +1,158 @@
 {
-  "projects": []
+  "projects": [
+    {
+      "name": "blog-vitrine",
+      "account": "perso@exemple.fr",
+      "url": "https://blogvitrine.supabase.co",
+      "key_env": "SUPABASE_KEY_BLOG_VITRINE",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_PERSO",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "crm-client",
+      "account": "perso@exemple.fr",
+      "url": "https://crmclientdemo.supabase.co",
+      "key_env": "SUPABASE_KEY_CRM_CLIENT",
+      "key_type": "anon",
+      "access_token_env": "SUPABASE_TOKEN_PERSO",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "Appointment",
+      "account": "Connacri3@gmail.com",
+      "url": "https://vkmgakmujipnpjlawjqm.supabase.co",
+      "key_env": "SUPABASE_KEY_APPOINTMENT",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_CONNACRI3_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "CyberScrape",
+      "account": "Connacri3@gmail.com",
+      "url": "https://uzouxpnsgloselhhltyw.supabase.co",
+      "key_env": "SUPABASE_KEY_CYBERSCRAPE",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_CONNACRI3_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "ramzi.guedouar@gmail.com's Project",
+      "account": "ramzi.guedouar@gmail.com",
+      "url": "https://dhwpwfzktedljsrrczbe.supabase.co",
+      "key_env": "SUPABASE_KEY_RAMZI_GUEDOUAR_GMAIL_COM_S_PROJECT",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_RAMZI_GUEDOUAR_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "Congress's Project",
+      "account": "oran.inturk@gmail.com",
+      "url": "https://tkmzeywijodhoudjgtxr.supabase.co",
+      "key_env": "SUPABASE_KEY_CONGRESS_S_PROJECT",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_ORAN_INTURK_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "Planning",
+      "account": "oran.inturk@gmail.com",
+      "url": "https://yeswhmhlyjzjqcpawxbm.supabase.co",
+      "key_env": "SUPABASE_KEY_PLANNING",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_ORAN_INTURK_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "rnd",
+      "account": "samuel69tr00@gmail.com",
+      "url": "https://liveclvibiqcpekanfbp.supabase.co",
+      "key_env": "SUPABASE_KEY_RND",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_SAMUEL69TR00_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "Doro's Project",
+      "account": "samuel69tr00@gmail.com",
+      "url": "https://rwzsnlfuqmfxouhfbeoi.supabase.co",
+      "key_env": "SUPABASE_KEY_DORO_S_PROJECT",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_SAMUEL69TR00_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "Profilum Project",
+      "account": "forslog@gmail.com",
+      "url": "https://uuosdbxqegnnwaojqxec.supabase.co",
+      "key_env": "SUPABASE_KEY_PROFILUM_PROJECT",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_FORSLOG_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "forslog@gmail.com",
+      "account": "forslog@gmail.com",
+      "url": "https://khqwitafbyinvemzfbjh.supabase.co",
+      "key_env": "SUPABASE_KEY_FORSLOG_GMAIL_COM",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_FORSLOG_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "orhospital_plateau",
+      "account": "an.tirex@gmail.com",
+      "url": "https://hvwnjvhhfnwyotvbthbz.supabase.co",
+      "key_env": "SUPABASE_KEY_ORHOSPITAL_PLATEAU",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_AN_TIREX_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "Wifi Project",
+      "account": "oran.tirex@gmail.com",
+      "url": "https://rfhogskyetnmtmxglmxo.supabase.co",
+      "key_env": "SUPABASE_KEY_WIFI_PROJECT",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_ORAN_TIREX_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    },
+    {
+      "name": "CargoLink",
+      "account": "connacri1@gmail.com",
+      "url": "https://mxhomeuraxnmjtfhzhvz.supabase.co",
+      "key_env": "SUPABASE_KEY_CARGOLINK",
+      "key_type": "secret",
+      "access_token_env": "SUPABASE_TOKEN_CONNACRI1_GMAIL_COM",
+      "table": "keepalive_pings",
+      "keep": 5,
+      "enabled": true
+    }
+  ]
 }
