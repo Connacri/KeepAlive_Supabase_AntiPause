@@ -1,0 +1,6 @@
+{
+  "name": "Supabase KeepAlive — GitHub Actions",
+  "description": "Générateur de dépôt prêt à pousser pour automatiser le maintien en activité de projets Supabase gratuits via GitHub Actions (ping, création de table et vidage).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

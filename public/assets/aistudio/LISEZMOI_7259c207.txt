@@ -1,0 +1,55 @@
+SUPABASE KEEPALIVE - garde tes projets Supabase gratuits actifs
+================================================================
+
+INSTALLATION (une seule fois)
+1. Extrais ce dossier a un endroit permanent, par exemple C:\Apps\SupabaseKeepAlive
+   (ne le deplace plus ensuite : le demarrage Windows pointe vers ce dossier).
+2. Double-clique sur installer.bat (Python 3 doit etre installe, avec "Add to PATH").
+3. Table "keepalive_pings" de CHAQUE projet - deux facons :
+   a) AUTOMATIQUE (recommande) : cree un jeton d'acces sur Supabase
+      (Dashboard > Account > Access Tokens > Generate new token, il commence par sbp_)
+      et colle-le dans la fiche du projet. A l'ajout du projet, la table est creee toute seule
+      (puis verifiee / recreee si besoin a chaque ping). UN jeton suffit pour tous les projets
+      du meme compte : pour les suivants, saisis le meme compte et laisse le jeton vide.
+   b) MANUELLE : bouton "Creer la table" sans jeton = le SQL est copie et le SQL Editor du projet
+      s'ouvre ; colle (Ctrl+V) puis Run. Fichiers fournis : sql_cle_anon.sql (simple) ou
+      sql_cle_secrete.sql (plus sur, cle secrete sb_secret_..., a ne jamais partager).
+4. Dans l'application : "Ajouter" (ou l'interface web http://127.0.0.1:8765),
+   saisis le COMPTE Supabase (email ou nom), le nom du projet, l'URL, la cle,
+   (le jeton d'acces) et garde la table "keepalive_pings". La liste est triee par compte.
+
+VIDER LA TABLE keepalive_pings
+- Un projet : selectionne-le puis "Vider" > "Vider la table du projet selectionne"
+  (interface web : bouton 🧹 sur la ligne du projet).
+- Tous les projets ensemble : "Vider" > "Vider la table de TOUS les projets"
+  (interface web : bouton "Vider toutes les tables"). Les projets desactives sont inclus.
+- Une confirmation est demandee. Seule la table de keep-alive du projet est videe (la table
+  reste, seules ses lignes sont supprimees). Si le nom de la table n'est pas "keepalive_pings",
+  la confirmation te previent : verifie que c'est bien la table de keep-alive.
+- Le prochain ping ajoute simplement une nouvelle ligne : vider ne gene pas le maintien en activite.
+
+TEMOINS DE SURVEILLANCE (tous les projets ajoutes)
+- Widget sur le bureau Windows : un temoin lumineux par projet, groupes par compte, avec
+  "il y a X min". Deplace-le a la souris ; clic droit : tout pinger, ouvrir la fenetre,
+  "Toujours au-dessus", masquer. Survol d'une ligne = detail du dernier statut.
+  Se coupe / se remet avec la case "Temoins sur le bureau" ou le menu de l'icone de notification.
+- Interface web : carte "Surveillance" en haut (memes temoins, mise a jour toutes les 5 s).
+- Icone de notification : la pastille prend la couleur du PIRE etat ; l'infobulle indique "N/M OK".
+- Couleurs : VERT = OK | ORANGE = en retard sur le planning ou une etape a echoue |
+  ROUGE = echec du dernier ping, ou aucun succes depuis plus de 5 jours (risque de pause) |
+  BLEU = ping en cours | GRIS = pas encore pingue / projet desactive.
+
+FONCTIONNEMENT
+- Toutes les 12 h (reglable), l'app fait sur chaque projet : INSERT, UPDATE, COUNT, DELETE
+  dans la table keepalive_pings. Si le PC etait eteint, le rattrapage se fait au demarrage.
+- Elle demarre avec Windows et reste dans la zone de notification (fermer la fenetre = reduire).
+- Donnees et journal : %APPDATA%\SupabaseKeepAlive\ (cles chiffrees avec Windows DPAPI).
+
+A SAVOIR
+- Le PC doit etre allume : eteint plus d'une semaine, les projets se mettent en pause.
+- Un projet deja en pause ne se reveille pas par un ping : restaure-le dans le tableau de bord Supabase.
+- Statut rouge dans la liste : lis le message (SQL manquant, cle refusee, projet en pause...).
+- Le jeton d'acces donne un acces large au compte Supabase : ne le partage jamais. Il est chiffre
+  avec Windows DPAPI sur ton PC. Tu peux aussi le supprimer dans Supabase une fois les tables creees
+  (la creation auto ne marchera alors plus pour les nouveaux projets).
+- Option .exe autonome : creer_exe.bat (cree dist\SupabaseKeepAlive.exe).
