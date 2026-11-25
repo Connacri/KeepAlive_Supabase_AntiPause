@@ -216,6 +216,7 @@ export default function App() {
           {activeSection === 'projects' && (
             <ProjectsView
               projects={projects}
+              settings={settings}
               cronLabel={cronLabel}
               secretCount={secrets.length}
               onAdd={() => {
@@ -230,6 +231,7 @@ export default function App() {
               onDelete={handleDeleteProject}
               onOpenImport={() => setImportModalOpen(true)}
               onNavigateRepo={() => setActiveSection('repo')}
+              onUpdateSettings={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
             />
           )}
 

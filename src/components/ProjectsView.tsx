@@ -8,10 +8,12 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { ProjectConfig } from '../types';
+import { ProjectConfig, RepoSettings } from '../types';
+import { PingScheduleDashboard } from './PingScheduleDashboard';
 
 interface ProjectsViewProps {
   projects: ProjectConfig[];
+  settings: RepoSettings;
   cronLabel: string;
   secretCount: number;
   onAdd: () => void;
@@ -20,12 +22,14 @@ interface ProjectsViewProps {
   onDelete: (id: string) => void;
   onOpenImport: () => void;
   onNavigateRepo: () => void;
+  onUpdateSettings: (patch: Partial<RepoSettings>) => void;
 }
 
 type StatusFilter = 'all' | 'active' | 'paused';
 
 export function ProjectsView({
   projects,
+  settings,
   cronLabel,
   secretCount,
   onAdd,
@@ -34,6 +38,7 @@ export function ProjectsView({
   onDelete,
   onOpenImport,
   onNavigateRepo,
+  onUpdateSettings,
 }: ProjectsViewProps) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
@@ -96,6 +101,13 @@ export function ProjectsView({
           </div>
         </div>
       </div>
+
+      <PingScheduleDashboard
+        projects={projects}
+        settings={settings}
+        onUpdateSettings={onUpdateSettings}
+        onNavigateRepo={onNavigateRepo}
+      />
 
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
